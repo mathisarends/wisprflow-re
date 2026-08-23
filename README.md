@@ -22,6 +22,19 @@ quotas, or feature entitlements.
 
 No JavaScript is injected and `app.asar` is never modified or inspected.
 
+## Requirements
+
+- Python 3.12–3.14
+- [uv](https://docs.astral.sh/uv/)
+- An existing Wispr Flow desktop install (for its `session.json`)
+- [FFmpeg](https://ffmpeg.org/) on `PATH` for file-based transcription
+
+## Install
+
+```text
+uv sync
+```
+
 ## Quick start
 
 ```python
@@ -129,6 +142,14 @@ result = client.transcribe(
 
 FFmpeg must be available on `PATH` for file transcription. If audio is already
 a normalized 16 kHz mono PCM16 WAV payload, use `transcribe_bytes()`.
+
+## Development
+
+```text
+uv run pytest
+uv run ruff check .
+uv run ruff format .
+```
 
 ## Stability
 
