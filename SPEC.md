@@ -52,8 +52,16 @@ Local replacement and snippet processing produces `TranscriptResult.final`.
 - Modifying or unpacking the installed `app.asar`
 - Automatically extracting or embedding backend/API keys
 - Implementing login UI or bypassing account limits
-- Live microphone capture, keyboard injection, and command mode
+- Keyboard injection and command mode
 - Cross-process refresh locking
+
+## Optional audio input
+
+`AudioInput` is the capture port consumed by `WisprClient.transcribe_input()`.
+The `microphone` optional dependency provides `SoundDeviceMicrophone`, backed by
+PortAudio through `sounddevice`. It enumerates input devices and captures PCM16
+audio into an in-memory WAV, either for a fixed duration or until Enter is
+pressed. No temporary recording is retained on disk.
 
 ## Compatibility boundary
 

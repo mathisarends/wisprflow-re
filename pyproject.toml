@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "wisprflow-re"
 version = "0.1.0"
@@ -12,6 +16,9 @@ dependencies = [
 microphone = [
     "sounddevice>=0.5,<1",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["whisprflow"]
 
 [tool.ruff]
 line-length = 88

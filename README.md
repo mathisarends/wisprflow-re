@@ -42,6 +42,36 @@ Add `--refresh` to enter the Supabase publishable key through a hidden prompt.
 Use `--direct --model-id <MODEL_ID>` only when testing an explicit Baseten
 fallback route.
 
+## Speak directly into a microphone
+
+Microphone capture is an optional PortAudio-based adapter. The core SDK remains
+installable without it:
+
+```text
+uv sync --extra microphone
+uv run --extra microphone python -m examples.try_microphone --list-devices
+uv run --extra microphone python -m examples.try_microphone
+```
+
+The final command starts recording immediately. Speak, then press Enter to stop
+and transcribe. Select a port or use a fixed recording duration when needed:
+
+```text
+uv run --extra microphone python -m examples.try_microphone --device 2
+uv run --extra microphone python -m examples.try_microphone --duration 10
+```
+
+Programmatic usage:
+
+```python
+from whisprflow import SoundDeviceMicrophone, WisprClient
+
+client = WisprClient.from_desktop()
+microphone = SoundDeviceMicrophone(device=None)
+result = client.transcribe_input(microphone)
+print(result.final)
+```
+
 The default works while the access token in the desktop session is fresh. To
 allow refresh, pass the Supabase **publishable/anon** key explicitly. The SDK
 does not read it from `.env`, environment variables, or the desktop bundle.

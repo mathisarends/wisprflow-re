@@ -63,3 +63,21 @@ def test_direct_route_formats_explicit_backend_values():
     metadata = dict(route.metadata("token"))
     assert metadata["baseten-authorization"] == "Api-Key placeholder"
     assert metadata["baseten-model-id"] == "model-abc"
+
+
+def test_client_can_capture_from_audio_input():
+    response = _message(1, _message(1, _string(2, "From microphone")))
+    transport = RecordingTransport([response])
+    client = WisprClient(
+        auth=lambda: "synthetic-token",
+        user_id="user-1",
+        transport=transport,
+    )
+
+    class FakeInput:
+        def capture(self):
+            return b"RIFF synthetic microphone wav"
+
+    output = client.transcribe_input(FakeInput())
+
+    assert output.final == "From microphone"
