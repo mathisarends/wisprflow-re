@@ -1,10 +1,17 @@
 [project]
 name = "wisprflow-re"
 version = "0.1.0"
-description = "Add your description here"
+description = "Patch-free unofficial Python client for Wispr Flow"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
-dependencies = []
+dependencies = [
+    "grpcio>=1.74,<2",
+]
+
+[project.optional-dependencies]
+microphone = [
+    "sounddevice>=0.5,<1",
+]
 
 [tool.ruff]
 line-length = 88
@@ -14,7 +21,7 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=main --cov=whisprflow --cov-report=term-missing"
+addopts = "--cov=whisprflow --cov-report=term-missing"
 testpaths = ["tests"]
 
 [dependency-groups]
