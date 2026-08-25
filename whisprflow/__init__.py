@@ -11,12 +11,16 @@ from whisprflow.errors import (
     WisprFlowError,
 )
 from whisprflow.models import (
+    AppType,
     AuthStatus,
     Credentials,
+    EditingStrength,
+    Language,
     RuntimeRoute,
     TranscriptionContext,
     TranscriptionOptions,
     TranscriptResult,
+    WritingStyle,
 )
 from whisprflow.transport import GrpcTransport, Transport
 
@@ -24,13 +28,16 @@ __all__ = [
     "AudioConversionError",
     "AudioInput",
     "AudioInputError",
+    "AppType",
     "AuthStatus",
     "Credentials",
     "CredentialsError",
     "DesktopAuth",
     "DesktopSessionStore",
+    "EditingStrength",
     "GrpcTransport",
     "InputDevice",
+    "Language",
     "OptionalDependencyError",
     "ProtocolError",
     "RuntimeConfigurationError",
@@ -43,4 +50,5 @@ __all__ = [
     "Transport",
     "WisprClient",
     "WisprFlowError",
+    "WritingStyle",
 ]

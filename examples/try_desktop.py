@@ -17,11 +17,14 @@ from pathlib import Path
 
 from whisprflow import (
     CredentialsError,
+    EditingStrength,
+    Language,
     RuntimeRoute,
     TranscriptionContext,
     TranscriptionOptions,
     WisprClient,
     WisprFlowError,
+    WritingStyle,
 )
 
 
@@ -46,7 +49,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--language", action="append", dest="languages")
     parser.add_argument("--style", default="CASUAL")
-    parser.add_argument("--cleanup", default="NONE")
+    parser.add_argument("--cleanup", default="VERBATIM")
     parser.add_argument(
         "--before", default="", help="Text immediately before the cursor"
     )
@@ -106,9 +109,16 @@ def main() -> int:
         result = client.transcribe(
             args.audio,
             options=TranscriptionOptions(
-                languages=args.languages or ["en"],
-                style=args.style,
-                cleanup=args.cleanup,
+                languages=(
+                    [
+                        Language[value.upper().replace("-", "_")]
+                        for value in args.languages
+                    ]
+                    if args.languages
+                    else [Language.EN]
+                ),
+                style=WritingStyle[args.style.upper()],
+                cleanup=EditingStrength[args.cleanup.upper()],
             ),
             context=TranscriptionContext(
                 before_text=args.before,
@@ -118,7 +128,7 @@ def main() -> int:
     except CredentialsError as exc:
         print(f"Authentication failed: {exc}", file=sys.stderr)
         return 3
-    except (ValueError, WisprFlowError) as exc:
+    except (KeyError, ValueError, WisprFlowError) as exc:
         print(f"Wispr request failed: {exc}", file=sys.stderr)
         return 4
     except Exception as exc:

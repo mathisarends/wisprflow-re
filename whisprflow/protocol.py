@@ -4,35 +4,12 @@ from collections.abc import Iterable, Iterator
 
 from whisprflow.errors import ProtocolError
 from whisprflow.models import (
+    AppType,
+    Language,
     TranscriptionContext,
     TranscriptionOptions,
     TranscriptResult,
 )
-
-WRITING_STYLE = {
-    "UNSPECIFIED": 0,
-    "FORMAL": 1,
-    "CASUAL": 2,
-    "VERY_CASUAL": 3,
-    "EXCITED": 4,
-}
-EDITING_STRENGTH = {
-    "NONE": 1,
-    "LIGHT": 1,
-    "MEDIUM": 2,
-    "HIGH": 3,
-    "VERBATIM": 1,
-}
-LANGUAGE_ENUM = {"en": 1, "engb": 2, "hi": 20, "hien": 21}
-APP_TYPE_ENUM = {
-    "other": 1,
-    "browser": 2,
-    "personal": 3,
-    "work": 4,
-    "email": 5,
-    "chatbot": 6,
-    "developer": 7,
-}
 
 
 def encode_requests(
@@ -142,12 +119,10 @@ def _preferences(options: TranscriptionOptions) -> bytes:
         user += _string(3, options.email)
     data = _message(1, user)
 
-    languages = [code.lower() for code in options.languages]
-    if "hien" in languages and "en" not in languages:
-        languages.insert(0, "en")
-    packed = b"".join(
-        _varint(LANGUAGE_ENUM[code]) for code in languages if code in LANGUAGE_ENUM
-    )
+    languages = list(options.languages)
+    if Language.HI_EN in languages and Language.EN not in languages:
+        languages.insert(0, Language.EN)
+    packed = b"".join(_varint(code) for code in languages)
     if packed:
         data += _bytes(2, packed)
 
@@ -167,18 +142,17 @@ def _preferences(options: TranscriptionOptions) -> bytes:
     if replacements:
         data += _message(4, replacements)
 
-    style_value = WRITING_STYLE.get(options.style.upper(), 0)
+    style_value = options.style
     style_field = {
-        "other": 1,
-        "personal": 2,
-        "work": 3,
-        "email": 4,
-    }.get(options.app_type.lower(), 1)
+        AppType.PERSONAL_MESSAGING: 2,
+        AppType.WORK_MESSAGING: 3,
+        AppType.EMAIL: 4,
+    }.get(options.app_type, 1)
     general_style = _integer(style_field, style_value) if style_value else b""
     style = _message(1, general_style) if general_style else b""
     style += _message(3, _integer(1, 0))
     style += _message(4, _integer(2, 0) + _integer(3, 0))
-    style += _integer(5, EDITING_STRENGTH.get(options.cleanup.upper(), 1))
+    style += _integer(5, options.cleanup)
     return data + _message(5, style)
 
 
@@ -203,7 +177,7 @@ def _context_request(context: TranscriptionContext) -> bytes:
         app += _string(2, context.bundle_id)
     if context.url:
         app += _string(3, context.url)
-    app += _integer(4, APP_TYPE_ENUM.get(context.app_type.lower(), 1))
+    app += _integer(4, context.app_type)
     if app:
         body += _message(1, app)
 

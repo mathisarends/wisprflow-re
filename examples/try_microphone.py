@@ -11,11 +11,14 @@ import getpass
 import sys
 
 from whisprflow import (
+    EditingStrength,
+    Language,
     SoundDeviceMicrophone,
     TranscriptionContext,
     TranscriptionOptions,
     WisprClient,
     WisprFlowError,
+    WritingStyle,
 )
 
 
@@ -41,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument("--language", action="append", dest="languages")
     parser.add_argument("--style", default="CASUAL")
-    parser.add_argument("--cleanup", default="NONE")
+    parser.add_argument("--cleanup", default="VERBATIM")
     parser.add_argument("--before", default="")
     parser.add_argument("--app", default="Terminal")
     return parser.parse_args()
@@ -96,16 +99,23 @@ def main() -> int:
         result = client.transcribe_input(
             microphone,
             options=TranscriptionOptions(
-                languages=args.languages or ["en"],
-                style=args.style,
-                cleanup=args.cleanup,
+                languages=(
+                    [
+                        Language[value.upper().replace("-", "_")]
+                        for value in args.languages
+                    ]
+                    if args.languages
+                    else [Language.DE]
+                ),
+                style=WritingStyle[args.style.upper()],
+                cleanup=EditingStrength[args.cleanup.upper()],
             ),
             context=TranscriptionContext(
                 before_text=args.before,
                 app_name=args.app,
             ),
         )
-    except (ValueError, WisprFlowError) as exc:
+    except (KeyError, ValueError, WisprFlowError) as exc:
         print(f"Microphone transcription failed: {exc}", file=sys.stderr)
         return 3
     except Exception as exc:

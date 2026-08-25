@@ -123,14 +123,20 @@ client = WisprClient(
 ## Options and context
 
 ```python
-from whisprflow import TranscriptionContext, TranscriptionOptions
+from whisprflow import (
+    EditingStrength,
+    Language,
+    TranscriptionContext,
+    TranscriptionOptions,
+    WritingStyle,
+)
 
 result = client.transcribe(
     "recording.wav",
     options=TranscriptionOptions(
-        languages=["en"],
-        style="FORMAL",
-        cleanup="MEDIUM",
+        languages=[Language.EN],
+        style=WritingStyle.FORMAL,
+        cleanup=EditingStrength.LIGHT,
         dictionary=["Codex"],
     ),
     context=TranscriptionContext(
