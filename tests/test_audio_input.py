@@ -5,8 +5,8 @@ from io import BytesIO
 
 import pytest
 
-import whisprflow.audio_input as audio_input
-from whisprflow import AudioInputError, OptionalDependencyError, SoundDeviceMicrophone
+import wisprflow.audio_input as audio_input
+from wisprflow import AudioInputError, OptionalDependencyError, SoundDeviceMicrophone
 
 
 class FakeStream(AbstractContextManager):

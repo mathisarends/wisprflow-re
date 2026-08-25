@@ -2,17 +2,17 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import overload
 
-from whisprflow.audio import normalized_audio
-from whisprflow.audio_input import AudioInput
-from whisprflow.auth import (
+from wisprflow.audio import normalized_audio
+from wisprflow.audio_input import AudioInput
+from wisprflow.auth import (
     DefaultPublishableKeyResolver,
     DesktopAuth,
     DesktopSessionStore,
     PublishableKeyResolver,
     SupabaseTokenRefresher,
 )
-from whisprflow.desktop_preferences import DesktopPreferencesStore
-from whisprflow.models import (
+from wisprflow.desktop_preferences import DesktopPreferencesStore
+from wisprflow.models import (
     AppType,
     AuthStatus,
     RuntimeRoute,
@@ -20,8 +20,8 @@ from whisprflow.models import (
     TranscriptionOptions,
     TranscriptResult,
 )
-from whisprflow.protocol import decode_responses, encode_requests
-from whisprflow.transport import GrpcTransport, Transport
+from wisprflow.protocol import decode_responses, encode_requests
+from wisprflow.transport import GrpcTransport, Transport
 
 type AudioSource = str | Path | bytes | AudioInput
 

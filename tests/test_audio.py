@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-import whisprflow.audio as audio
-from whisprflow import AudioConversionError
-from whisprflow.audio import normalized_audio
+import wisprflow.audio as audio
+from wisprflow import AudioConversionError
+from wisprflow.audio import normalized_audio
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from whisprflow import CredentialsError, DesktopSessionStore
+from wisprflow import CredentialsError, DesktopSessionStore
 
 
 def test_reads_credentials_from_the_desktop_session(write_session, jwt):
@@ -52,7 +52,7 @@ def test_refresh_preserves_unknown_fields_and_the_outer_document(write_session, 
 
 def test_refresh_derives_expiry_from_expires_in(write_session, jwt, monkeypatch):
     path = write_session()
-    monkeypatch.setattr("whisprflow.auth.session.time.time", lambda: 1000.0)
+    monkeypatch.setattr("wisprflow.auth.session.time.time", lambda: 1000.0)
 
     credentials = DesktopSessionStore(path).save_refresh(
         {"access_token": jwt(sub="user-1"), "expires_in": 3600}
@@ -85,7 +85,7 @@ def test_refresh_leaves_no_temporary_file_behind_when_writing_fails(
 ):
     path = write_session()
     monkeypatch.setattr(
-        "whisprflow.auth.session.os.replace",
+        "wisprflow.auth.session.os.replace",
         lambda *args: (_ for _ in ()).throw(OSError("locked")),
     )
     store = DesktopSessionStore(path)

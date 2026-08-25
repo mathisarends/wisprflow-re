@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from whisprflow import DefaultPublishableKeyResolver
+from wisprflow import DefaultPublishableKeyResolver
 
 
 def _anon_key(project_ref: str, *, role: str = "anon") -> str:

@@ -1,6 +1,6 @@
 import pytest
 
-from whisprflow import (
+from wisprflow import (
     AppType,
     EditingStrength,
     Language,
@@ -9,7 +9,7 @@ from whisprflow import (
     TranscriptionOptions,
     WritingStyle,
 )
-from whisprflow.protocol import (
+from wisprflow.protocol import (
     _bytes,
     _fields,
     _integer,

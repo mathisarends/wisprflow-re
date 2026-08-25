@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from whisprflow.errors import DesktopPreferencesError
-from whisprflow.models import (
+from wisprflow.errors import DesktopPreferencesError
+from wisprflow.models import (
     AppType,
     EditingStrength,
     Language,

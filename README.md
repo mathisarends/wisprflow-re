@@ -33,7 +33,7 @@ uv sync --extra microphone
 ## Quick start
 
 ```python
-from whisprflow import WisprClient
+from wisprflow import WisprClient
 
 client = WisprClient.from_desktop()
 result = client.transcribe("recording.mp3")
@@ -86,7 +86,7 @@ uv run --extra microphone python -m examples.try_microphone
 Programmatic usage:
 
 ```python
-from whisprflow import SoundDeviceMicrophone, WisprClient
+from wisprflow import SoundDeviceMicrophone, WisprClient
 
 client = WisprClient.from_desktop()
 result = client.transcribe(SoundDeviceMicrophone())
@@ -101,7 +101,7 @@ Use `TranscriptionOptions` to control language and formatting. Context helps the
 service adapt a transcript to the text and application around the cursor.
 
 ```python
-from whisprflow import (
+from wisprflow import (
     EditingStrength,
     Language,
     TranscriptionContext,
@@ -176,7 +176,7 @@ The default route requires no private backend credentials. A direct backend can
 be configured explicitly when needed:
 
 ```python
-from whisprflow import RuntimeRoute, WisprClient
+from wisprflow import RuntimeRoute, WisprClient
 
 route = RuntimeRoute(
     host="model-<MODEL_ID>.grpc.api.baseten.co",

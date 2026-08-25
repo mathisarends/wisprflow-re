@@ -1,11 +1,11 @@
-from whisprflow.auth.desktop import DesktopAuth, TokenRefresher
-from whisprflow.auth.keys import (
+from wisprflow.auth.desktop import DesktopAuth, TokenRefresher
+from wisprflow.auth.keys import (
     DefaultPublishableKeyResolver,
     PublishableKeyResolver,
     ResolvedPublishableKey,
 )
-from whisprflow.auth.refresh import SupabaseTokenRefresher
-from whisprflow.auth.session import DesktopSessionStore
+from wisprflow.auth.refresh import SupabaseTokenRefresher
+from wisprflow.auth.session import DesktopSessionStore
 
 __all__ = [
     "DefaultPublishableKeyResolver",

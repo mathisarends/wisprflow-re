@@ -1,5 +1,5 @@
-from whisprflow.audio_input import AudioInput, InputDevice, SoundDeviceMicrophone
-from whisprflow.auth import (
+from wisprflow.audio_input import AudioInput, InputDevice, SoundDeviceMicrophone
+from wisprflow.auth import (
     DefaultPublishableKeyResolver,
     DesktopAuth,
     DesktopSessionStore,
@@ -8,9 +8,9 @@ from whisprflow.auth import (
     SupabaseTokenRefresher,
     TokenRefresher,
 )
-from whisprflow.client import AudioSource, WisprClient
-from whisprflow.desktop_preferences import DesktopPreferencesStore
-from whisprflow.errors import (
+from wisprflow.client import AudioSource, WisprClient
+from wisprflow.desktop_preferences import DesktopPreferencesStore
+from wisprflow.errors import (
     AudioConversionError,
     AudioInputError,
     CredentialsError,
@@ -20,7 +20,7 @@ from whisprflow.errors import (
     RuntimeConfigurationError,
     WisprFlowError,
 )
-from whisprflow.models import (
+from wisprflow.models import (
     AppType,
     AuthStatus,
     Credentials,
@@ -32,7 +32,7 @@ from whisprflow.models import (
     TranscriptResult,
     WritingStyle,
 )
-from whisprflow.transport import GrpcTransport, Transport
+from wisprflow.transport import GrpcTransport, Transport
 
 __all__ = [
     "AudioConversionError",

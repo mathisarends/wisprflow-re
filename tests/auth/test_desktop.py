@@ -1,6 +1,6 @@
 import pytest
 
-from whisprflow import (
+from wisprflow import (
     CredentialsError,
     DesktopAuth,
     DesktopSessionStore,

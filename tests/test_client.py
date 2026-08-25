@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from whisprflow import (
+from wisprflow import (
     AppType,
     DefaultPublishableKeyResolver,
     EditingStrength,
@@ -12,7 +12,7 @@ from whisprflow import (
     TranscriptionOptions,
     WisprClient,
 )
-from whisprflow.protocol import _message, _string
+from wisprflow.protocol import _message, _string
 
 
 class RecordingTransport:
@@ -125,7 +125,7 @@ def test_a_file_source_is_normalized_before_upload(monkeypatch):
         assert path == source
         yield b"RIFF normalized wav"
 
-    monkeypatch.setattr("whisprflow.client.normalized_audio", fake_normalized_audio)
+    monkeypatch.setattr("wisprflow.client.normalized_audio", fake_normalized_audio)
 
     assert client(transport).transcribe(source).final == "From file"
 
@@ -193,7 +193,7 @@ def test_from_desktop_can_load_preferences_from_the_desktop_files(
             return TranscriptionOptions(replacements={"Desktop": "Loaded"})
 
     monkeypatch.setattr(
-        "whisprflow.client.DesktopPreferencesStore", FakePreferencesStore
+        "wisprflow.client.DesktopPreferencesStore", FakePreferencesStore
     )
     instance = WisprClient.from_desktop(
         session_path=write_session(expires_at=9_999_999_999),

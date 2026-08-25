@@ -4,7 +4,7 @@ import urllib.error
 
 import pytest
 
-from whisprflow import CredentialsError, ResolvedPublishableKey, SupabaseTokenRefresher
+from wisprflow import CredentialsError, ResolvedPublishableKey, SupabaseTokenRefresher
 
 
 class FakeResponse:

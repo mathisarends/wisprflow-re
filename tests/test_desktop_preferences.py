@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from whisprflow import (
+from wisprflow import (
     AppType,
     DesktopPreferencesError,
     DesktopPreferencesStore,

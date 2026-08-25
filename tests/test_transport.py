@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from whisprflow import GrpcTransport, RuntimeRoute
+from wisprflow import GrpcTransport, RuntimeRoute
 
 
 class FakeChannel:
