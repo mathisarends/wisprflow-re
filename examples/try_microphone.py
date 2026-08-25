@@ -96,7 +96,7 @@ def main() -> int:
         client = WisprClient.from_desktop(supabase_anon_key=publishable_key)
         status = client.auth_status()
         print(f"Auth: {status.status}; automatic refresh: {status.refresh_available}")
-        result = client.transcribe_input(
+        result = client.transcribe(
             microphone,
             options=TranscriptionOptions(
                 languages=(

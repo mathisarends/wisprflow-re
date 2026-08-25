@@ -83,7 +83,7 @@ from whisprflow import SoundDeviceMicrophone, WisprClient
 
 client = WisprClient.from_desktop()
 microphone = SoundDeviceMicrophone(device=None)
-result = client.transcribe_input(microphone)
+result = client.transcribe(microphone)
 print(result.final)
 ```
 
@@ -167,8 +167,23 @@ result = client.transcribe(
 )
 ```
 
-FFmpeg must be available on `PATH` for file transcription. If audio is already
-a normalized 16 kHz mono PCM16 WAV payload, use `transcribe_bytes()`.
+The same method accepts file paths, normalized WAV bytes, and `AudioInput`
+adapters. These accepted inputs are also exported as the `AudioSource` type
+alias:
+
+```python
+from pathlib import Path
+
+from whisprflow import SoundDeviceMicrophone
+
+client.transcribe("recording.mp3")
+client.transcribe(Path("recording.wav"))
+client.transcribe(wav_bytes)
+client.transcribe(SoundDeviceMicrophone())
+```
+
+FFmpeg must be available on `PATH` for file transcription. Byte payloads and
+input adapters must produce normalized 16 kHz mono PCM16 WAV audio.
 
 ## Development
 

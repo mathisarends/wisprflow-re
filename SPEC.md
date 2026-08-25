@@ -59,7 +59,7 @@ Local replacement and snippet processing produces `TranscriptResult.final`.
 
 ## Optional audio input
 
-`AudioInput` is the capture port consumed by `WisprClient.transcribe_input()`.
+`AudioInput` is the capture port accepted by `WisprClient.transcribe()`.
 The `microphone` optional dependency provides `SoundDeviceMicrophone`, backed by
 PortAudio through `sounddevice`. It enumerates input devices and captures PCM16
 audio into an in-memory WAV, either for a fixed duration or until Enter is

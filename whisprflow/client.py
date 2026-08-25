@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from pathlib import Path
+from typing import overload
 
 from whisprflow.audio import normalized_audio
 from whisprflow.audio_input import AudioInput
@@ -19,6 +20,8 @@ from whisprflow.models import (
 )
 from whisprflow.protocol import decode_responses, encode_requests
 from whisprflow.transport import GrpcTransport, Transport
+
+type AudioSource = str | Path | bytes | AudioInput
 
 
 class WisprClient:
@@ -99,14 +102,69 @@ class WisprClient:
             raise TypeError("Auth status is only available for desktop authentication.")
         return self._auth.status()
 
-    def transcribe_bytes(
+    @overload
+    def transcribe(
         self,
-        audio: bytes,
+        source: str | Path,
+        *,
+        options: TranscriptionOptions | None = None,
+        context: TranscriptionContext | None = None,
+    ) -> TranscriptResult: ...
+
+    @overload
+    def transcribe(
+        self,
+        source: bytes,
+        *,
+        options: TranscriptionOptions | None = None,
+        context: TranscriptionContext | None = None,
+    ) -> TranscriptResult: ...
+
+    @overload
+    def transcribe(
+        self,
+        source: AudioInput,
+        *,
+        options: TranscriptionOptions | None = None,
+        context: TranscriptionContext | None = None,
+    ) -> TranscriptResult: ...
+
+    def transcribe(
+        self,
+        source: AudioSource,
         *,
         options: TranscriptionOptions | None = None,
         context: TranscriptionContext | None = None,
     ) -> TranscriptResult:
-        """Transcribe an already-normalized mono 16 kHz PCM16 WAV payload."""
+        """Transcribe an audio file, normalized WAV payload, or input adapter."""
+        match source:
+            case bytes():
+                audio = source
+            case str() | Path():
+                with normalized_audio(source) as audio:
+                    return self._transcribe_audio(
+                        audio,
+                        options=options,
+                        context=context,
+                    )
+            case AudioInput():
+                audio = source.capture()
+            case _:
+                raise TypeError(f"Unsupported audio source: {type(source)!r}")
+
+        return self._transcribe_audio(
+            audio,
+            options=options,
+            context=context,
+        )
+
+    def _transcribe_audio(
+        self,
+        audio: bytes,
+        *,
+        options: TranscriptionOptions | None,
+        context: TranscriptionContext | None,
+    ) -> TranscriptResult:
         if not audio:
             raise ValueError("'audio' must not be empty.")
         options = options or TranscriptionOptions()
@@ -126,24 +184,3 @@ class WisprClient:
             timeout=self._timeout,
         )
         return decode_responses(responses, options)
-
-    def transcribe(
-        self,
-        audio_path: str | Path,
-        *,
-        options: TranscriptionOptions | None = None,
-        context: TranscriptionContext | None = None,
-    ) -> TranscriptResult:
-        """Normalize an audio file and transcribe it."""
-        with normalized_audio(audio_path) as audio:
-            return self.transcribe_bytes(audio, options=options, context=context)
-
-    def transcribe_input(
-        self,
-        source: AudioInput,
-        *,
-        options: TranscriptionOptions | None = None,
-        context: TranscriptionContext | None = None,
-    ) -> TranscriptResult:
-        """Capture WAV audio from an input adapter and transcribe it."""
-        return self.transcribe_bytes(source.capture(), options=options, context=context)

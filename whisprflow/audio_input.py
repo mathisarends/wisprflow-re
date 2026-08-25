@@ -3,11 +3,12 @@ import threading
 import wave
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from whisprflow.errors import AudioInputError, OptionalDependencyError
 
 
+@runtime_checkable
 class AudioInput(Protocol):
     """Port for anything that can produce an in-memory WAV recording."""
 

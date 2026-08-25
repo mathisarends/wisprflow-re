@@ -1,3 +1,6 @@
+from contextlib import contextmanager
+from pathlib import Path
+
 from whisprflow import (
     RuntimeRoute,
     TranscriptionContext,
@@ -30,7 +33,7 @@ def test_client_hides_auth_route_and_protocol_details():
         transport=transport,
     )
 
-    output = client.transcribe_bytes(
+    output = client.transcribe(
         b"RIFF synthetic wav",
         options=TranscriptionOptions(
             replacements={"world": "SDK"}, client_version=(1, 2, 3)
@@ -78,6 +81,39 @@ def test_client_can_capture_from_audio_input():
         def capture(self):
             return b"RIFF synthetic microphone wav"
 
-    output = client.transcribe_input(FakeInput())
+    output = client.transcribe(FakeInput())
 
     assert output.final == "From microphone"
+
+
+def test_client_normalizes_file_source(monkeypatch):
+    response = _message(1, _message(1, _string(2, "From file")))
+    transport = RecordingTransport([response])
+    client = WisprClient(
+        auth=lambda: "synthetic-token",
+        user_id="user-1",
+        transport=transport,
+    )
+    source = Path("recording.mp3")
+
+    @contextmanager
+    def fake_normalized_audio(path):
+        assert path == source
+        yield b"RIFF normalized wav"
+
+    monkeypatch.setattr("whisprflow.client.normalized_audio", fake_normalized_audio)
+
+    output = client.transcribe(source)
+
+    assert output.final == "From file"
+
+
+def test_client_rejects_unsupported_audio_source():
+    client = WisprClient(auth=lambda: "token", user_id="user-1")
+
+    try:
+        client.transcribe(123)  # type: ignore[arg-type]
+    except TypeError as exc:
+        assert str(exc) == "Unsupported audio source: <class 'int'>"
+    else:
+        raise AssertionError("Expected unsupported source to raise TypeError")

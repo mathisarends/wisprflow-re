@@ -8,7 +8,7 @@ from whisprflow.auth import (
     SupabaseTokenRefresher,
     TokenRefresher,
 )
-from whisprflow.client import WisprClient
+from whisprflow.client import AudioSource, WisprClient
 from whisprflow.errors import (
     AudioConversionError,
     AudioInputError,
@@ -36,6 +36,7 @@ __all__ = [
     "AudioConversionError",
     "AudioInput",
     "AudioInputError",
+    "AudioSource",
     "AppType",
     "AuthStatus",
     "Credentials",
