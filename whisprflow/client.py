@@ -3,7 +3,13 @@ from pathlib import Path
 
 from whisprflow.audio import normalized_audio
 from whisprflow.audio_input import AudioInput
-from whisprflow.auth import DesktopAuth, DesktopSessionStore, SupabaseTokenRefresher
+from whisprflow.auth import (
+    DefaultPublishableKeyResolver,
+    DesktopAuth,
+    DesktopSessionStore,
+    PublishableKeyResolver,
+    SupabaseTokenRefresher,
+)
 from whisprflow.models import (
     AuthStatus,
     RuntimeRoute,
@@ -48,23 +54,37 @@ class WisprClient:
         *,
         session_path: Path | None = None,
         supabase_anon_key: str | None = None,
+        publishable_key_resolver: PublishableKeyResolver | None = None,
+        config_path: Path | None = None,
+        auto_discover: bool = True,
         route: RuntimeRoute | None = None,
         transport: Transport | None = None,
         timeout: float = 90.0,
     ) -> "WisprClient":
         """Reuse the official desktop login without modifying the application.
 
-        The edge proxy is the patch-free default. Pass an explicit RuntimeRoute
-        if an installation still needs direct Baseten routing. The publishable
-        Supabase key is never discovered from environment variables or bundles.
+        The edge proxy is the patch-free default. Supabase refresh configuration
+        is resolved lazily from an explicit key, SDK config, environment, or the
+        installed desktop application. Pass ``auto_discover=False`` to disable
+        inspection of the desktop bundle.
         """
         store = DesktopSessionStore(session_path)
-        refresher = None
-        if supabase_anon_key:
-            refresher = SupabaseTokenRefresher(
-                project_ref=store.project_ref,
-                anon_key=supabase_anon_key,
+        if publishable_key_resolver is not None and (
+            supabase_anon_key is not None or config_path is not None
+        ):
+            raise ValueError(
+                "A custom 'publishable_key_resolver' cannot be combined with "
+                "'supabase_anon_key' or 'config_path'."
             )
+        resolver = publishable_key_resolver or DefaultPublishableKeyResolver(
+            explicit_key=supabase_anon_key,
+            config_path=config_path,
+            auto_discover=auto_discover,
+        )
+        refresher = SupabaseTokenRefresher(
+            project_ref=store.project_ref,
+            key_resolver=resolver,
+        )
         auth = DesktopAuth(store, refresher)
         return cls(
             auth=auth,

@@ -160,6 +160,7 @@ class AuthStatus:
     expires_at: float | None
     seconds_remaining: float | None
     refresh_available: bool
+    refresh_source: str | None = None
 
     @property
     def ok(self) -> bool:

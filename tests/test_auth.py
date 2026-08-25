@@ -3,7 +3,13 @@ import json
 
 import pytest
 
-from whisprflow import CredentialsError, DesktopAuth, DesktopSessionStore
+from whisprflow import (
+    CredentialsError,
+    DesktopAuth,
+    DesktopSessionStore,
+    ResolvedPublishableKey,
+    SupabaseTokenRefresher,
+)
 
 
 def _jwt(**claims):
@@ -93,3 +99,55 @@ def test_expired_token_without_refresher_has_actionable_error(tmp_path):
 
     with pytest.raises(CredentialsError, match="supabase_anon_key"):
         auth()
+
+
+def test_supabase_refresher_resolves_key_only_when_called():
+    calls = []
+
+    class Resolver:
+        def resolve(self, project_ref):
+            calls.append(project_ref)
+            return ResolvedPublishableKey("resolved-key", "test")
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self):
+            return b'{"access_token":"new-token"}'
+
+    requests = []
+
+    def open_request(request, *, timeout):
+        requests.append((request, timeout))
+        return Response()
+
+    refresher = SupabaseTokenRefresher(
+        project_ref="project", key_resolver=Resolver(), opener=open_request
+    )
+    assert calls == []
+
+    assert refresher("refresh-token") == {"access_token": "new-token"}
+    assert calls == ["project"]
+    assert requests[0][0].get_header("Apikey") == "resolved-key"
+    assert refresher.key_source == "test"
+
+
+def test_auth_status_reports_resolved_refresh_source(tmp_path):
+    path = tmp_path / "session.json"
+    _write_session(path, access=_jwt(sub="user-1", exp=2000))
+
+    class Resolver:
+        def resolve(self, project_ref):
+            return ResolvedPublishableKey("resolved-key", "desktop:test")
+
+    refresher = SupabaseTokenRefresher(project_ref="project", key_resolver=Resolver())
+    auth = DesktopAuth(DesktopSessionStore(path), refresher, clock=lambda: 1000)
+
+    status = auth.status()
+
+    assert status.refresh_available is True
+    assert status.refresh_source == "desktop:test"

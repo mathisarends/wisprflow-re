@@ -1,21 +1,13 @@
 import base64
 import json
 import os
-import threading
 import time
-import urllib.error
-import urllib.request
-from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 from whisprflow.errors import CredentialsError
-from whisprflow.models import AuthStatus, Credentials
-
-
-class TokenRefresher(Protocol):
-    def __call__(self, refresh_token: str, /) -> dict[str, Any]: ...
+from whisprflow.models import Credentials
 
 
 def _default_session_path() -> Path:
@@ -184,116 +176,6 @@ class DesktopSessionStore:
         except OSError as exc:
             raise CredentialsError(f"Cannot read {self.path}: {exc}") from None
         return _SessionDocument.parse(text, path=self.path)
-
-
-class SupabaseTokenRefresher:
-    """Refresh a desktop Supabase session using an explicitly supplied public key."""
-
-    def __init__(
-        self,
-        *,
-        project_ref: str,
-        anon_key: str,
-        timeout: float = 30.0,
-        opener: Callable[..., Any] = urllib.request.urlopen,
-    ) -> None:
-        if not anon_key:
-            raise ValueError("'anon_key' must not be empty.")
-        self.url = (
-            f"https://{project_ref}.supabase.co/auth/v1/token?grant_type=refresh_token"
-        )
-        self.anon_key = anon_key
-        self.timeout = timeout
-        self._opener = opener
-
-    def __call__(self, refresh_token: str) -> dict[str, Any]:
-        request = urllib.request.Request(
-            self.url,
-            data=json.dumps({"refresh_token": refresh_token}).encode(),
-            headers={
-                "apikey": self.anon_key,
-                "Authorization": f"Bearer {self.anon_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        try:
-            with self._opener(request, timeout=self.timeout) as response:
-                payload = json.loads(response.read())
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode(errors="replace")[:500]
-            raise CredentialsError(
-                f"Wispr session refresh failed (HTTP {exc.code}): {detail}"
-            ) from None
-        except (OSError, json.JSONDecodeError) as exc:
-            raise CredentialsError(f"Wispr session refresh failed: {exc}") from None
-        if not isinstance(payload, dict) or not payload.get("access_token"):
-            raise CredentialsError("Wispr session refresh returned no access token.")
-        return payload
-
-
-class DesktopAuth:
-    """Callable access-token provider with refresh-on-demand semantics."""
-
-    def __init__(
-        self,
-        store: DesktopSessionStore,
-        refresher: TokenRefresher | None = None,
-        *,
-        refresh_skew_seconds: float = 120.0,
-        clock: Callable[[], float] = time.time,
-    ) -> None:
-        self.store = store
-        self.refresher = refresher
-        self.refresh_skew_seconds = refresh_skew_seconds
-        self._clock = clock
-        self._lock = threading.Lock()
-
-    @property
-    def credentials(self) -> Credentials:
-        return self.store.load()
-
-    @property
-    def user_id(self) -> str:
-        return self.credentials.user_id
-
-    def __call__(self) -> str:
-        with self._lock:
-            credentials = self.store.load()
-            if credentials.is_fresh(
-                now=self._clock(), skew_seconds=self.refresh_skew_seconds
-            ):
-                return credentials.access_token
-            if not credentials.refresh_token:
-                raise CredentialsError(
-                    "Wispr access token expired and no refresh token is available."
-                )
-            if self.refresher is None:
-                raise CredentialsError(
-                    "Wispr access token expired. Supply 'supabase_anon_key' to "
-                    "WisprClient.from_desktop() or sign in again with Wispr Flow."
-                )
-            payload = self.refresher(credentials.refresh_token)
-            return self.store.save_refresh(payload).access_token
-
-    def status(self) -> AuthStatus:
-        credentials = self.store.load()
-        now = self._clock()
-        remaining = (
-            None if credentials.expires_at is None else credentials.expires_at - now
-        )
-        if remaining is None or remaining > self.refresh_skew_seconds:
-            status = "valid"
-        elif remaining > 0:
-            status = "near_expiry"
-        else:
-            status = "expired"
-        return AuthStatus(
-            status=status,
-            expires_at=credentials.expires_at,
-            seconds_remaining=remaining,
-            refresh_available=bool(credentials.refresh_token and self.refresher),
-        )
 
 
 def _project_ref(storage_key: str) -> str:

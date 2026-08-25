@@ -12,7 +12,7 @@ quotas, or feature entitlements.
 ## v1 scope
 
 - Reuse the official desktop `session.json`
-- Refresh an expired Supabase session when a publishable key is supplied
+- Refresh an expired Supabase session automatically
 - Preserve unknown session fields and rotated refresh tokens
 - Use `inference.wisprflow.com` as a patch-free edge-proxy route
 - Support an explicit direct-backend route without embedding private keys
@@ -20,7 +20,8 @@ quotas, or feature entitlements.
 - Normalize audio through FFmpeg
 - Inject cursor, application, and dynamic-vocabulary context
 
-No JavaScript is injected and `app.asar` is never modified or inspected.
+No JavaScript is injected and `app.asar` is never modified. The SDK may scan it
+read-only for the public Supabase key when no configured key is available.
 
 ## Requirements
 
@@ -51,9 +52,10 @@ An executable smoke-test example is included:
 uv run python -m examples.try_desktop recording.wav
 ```
 
-Add `--refresh` to enter the Supabase publishable key through a hidden prompt.
-Use `--direct --model-id <MODEL_ID>` only when testing an explicit Baseten
-fallback route.
+Refresh works automatically with a supported desktop installation. Add
+`--refresh` only to override discovery by entering the Supabase publishable key
+through a hidden prompt. Use `--direct --model-id <MODEL_ID>` only when testing
+an explicit Baseten fallback route.
 
 ## Speak directly into a microphone
 
@@ -85,15 +87,34 @@ result = client.transcribe_input(microphone)
 print(result.final)
 ```
 
-The default works while the access token in the desktop session is fresh. To
-allow refresh, pass the Supabase **publishable/anon** key explicitly. The SDK
-does not read it from `.env`, environment variables, or the desktop bundle.
+The default also refreshes expired access tokens. Publishable-key resolution is
+lazy and uses this priority: an explicit argument, the SDK config file,
+`WISPRFLOW_SUPABASE_ANON_KEY`, then read-only discovery from the installed
+desktop bundle.
+
+The optional config file is `%APPDATA%/wisprflow-re/config.json` on Windows,
+`~/Library/Application Support/wisprflow-re/config.json` on macOS, and
+`$XDG_CONFIG_HOME/wisprflow-re/config.json` (or `~/.config/...`) on Linux:
+
+```json
+{
+  "supabase_anon_keys": {
+    "<SUPABASE_PROJECT_REF>": "<SUPABASE_PUBLISHABLE_KEY>"
+  }
+}
+```
+
+An explicit key remains available as the highest-priority override:
 
 ```python
 client = WisprClient.from_desktop(
     supabase_anon_key="<SUPABASE_PUBLISHABLE_KEY>",
 )
 ```
+
+To prohibit desktop-bundle inspection, use
+`WisprClient.from_desktop(auto_discover=False)`. Custom integrations can inject
+a `PublishableKeyResolver` implementation.
 
 Direct Baseten routing is an explicit fallback:
 

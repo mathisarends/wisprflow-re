@@ -17,17 +17,19 @@ client = WisprClient.from_desktop()
 result = client.transcribe(path, options=options, context=context)
 ```
 
-Advanced callers can inject a token provider, user-id provider, runtime route,
-and transport. No environment-secret lookup is performed by the package.
+Advanced callers can inject a token provider, user-id provider, publishable-key
+resolver, runtime route, and transport.
 
 ## Authentication
 
 `DesktopSessionStore` discovers the single Supabase auth entry in Wispr's
 `session.json`, independent of its project-specific key name. `DesktopAuth`
 reloads the session for every request, checks expiry with a safety skew, and
-serializes refreshes within the process. If an explicit publishable Supabase key
-was supplied, rotated credentials are written atomically while unknown fields
-are preserved.
+serializes refreshes within the process. A publishable-key resolver checks an
+explicit value, SDK configuration, the environment, and finally performs a
+read-only scan of the installed desktop bundle. Rotated credentials are written
+atomically while unknown fields are preserved. Discovery is lazy and can be
+disabled.
 
 ## Runtime routing
 
@@ -50,7 +52,7 @@ Local replacement and snippet processing produces `TranscriptResult.final`.
 ## Non-goals for v1
 
 - Modifying or unpacking the installed `app.asar`
-- Automatically extracting or embedding backend/API keys
+- Extracting or embedding private backend/API keys
 - Implementing login UI or bypassing account limits
 - Keyboard injection and command mode
 - Cross-process refresh locking

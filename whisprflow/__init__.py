@@ -1,5 +1,13 @@
 from whisprflow.audio_input import AudioInput, InputDevice, SoundDeviceMicrophone
-from whisprflow.auth import DesktopAuth, DesktopSessionStore, SupabaseTokenRefresher
+from whisprflow.auth import (
+    DefaultPublishableKeyResolver,
+    DesktopAuth,
+    DesktopSessionStore,
+    PublishableKeyResolver,
+    ResolvedPublishableKey,
+    SupabaseTokenRefresher,
+    TokenRefresher,
+)
 from whisprflow.client import WisprClient
 from whisprflow.errors import (
     AudioConversionError,
@@ -34,16 +42,20 @@ __all__ = [
     "CredentialsError",
     "DesktopAuth",
     "DesktopSessionStore",
+    "DefaultPublishableKeyResolver",
     "EditingStrength",
     "GrpcTransport",
     "InputDevice",
     "Language",
     "OptionalDependencyError",
     "ProtocolError",
+    "PublishableKeyResolver",
+    "ResolvedPublishableKey",
     "RuntimeConfigurationError",
     "RuntimeRoute",
-    "SupabaseTokenRefresher",
     "SoundDeviceMicrophone",
+    "SupabaseTokenRefresher",
+    "TokenRefresher",
     "TranscriptResult",
     "TranscriptionContext",
     "TranscriptionOptions",
