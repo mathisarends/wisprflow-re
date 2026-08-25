@@ -9,10 +9,12 @@ from whisprflow.auth import (
     TokenRefresher,
 )
 from whisprflow.client import AudioSource, WisprClient
+from whisprflow.desktop_preferences import DesktopPreferencesStore
 from whisprflow.errors import (
     AudioConversionError,
     AudioInputError,
     CredentialsError,
+    DesktopPreferencesError,
     OptionalDependencyError,
     ProtocolError,
     RuntimeConfigurationError,
@@ -42,6 +44,8 @@ __all__ = [
     "Credentials",
     "CredentialsError",
     "DesktopAuth",
+    "DesktopPreferencesError",
+    "DesktopPreferencesStore",
     "DesktopSessionStore",
     "DefaultPublishableKeyResolver",
     "EditingStrength",

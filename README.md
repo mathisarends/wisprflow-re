@@ -143,6 +143,43 @@ client = WisprClient(
 
 ## Options and context
 
+To reuse the official desktop preferences and its local dictionary, opt in when
+constructing the desktop client:
+
+```python
+from whisprflow import AppType, TranscriptionContext, WisprClient
+
+client = WisprClient.from_desktop(use_desktop_preferences=True)
+result = client.transcribe(
+    "recording.wav",
+    context=TranscriptionContext(app_type=AppType.EMAIL),
+)
+```
+
+The SDK reads `%APPDATA%/Wispr Flow/config.json` and
+`%APPDATA%/Wispr Flow/flow.sqlite` without modifying either file. Preferences
+are reloaded for every transcription, so desktop changes take effect without
+recreating the client. The context's `app_type` selects the matching desktop
+style profile. Passing an explicit `TranscriptionOptions` instance bypasses
+desktop preference loading for that call. The opt-in also copies the desktop
+profile's first name, last name, and email into the transcription preference
+payload, matching the fields already supported by `TranscriptionOptions`.
+
+Custom locations can be supplied with `preferences_config_path` and
+`preferences_database_path`. The reader can also be used independently:
+
+```python
+from dataclasses import replace
+
+from whisprflow import DesktopPreferencesStore, EditingStrength
+
+store = DesktopPreferencesStore()
+options = replace(store.load(), cleanup=EditingStrength.VERBATIM)
+result = client.transcribe("recording.wav", options=options)
+```
+
+Manual options remain available:
+
 ```python
 from whisprflow import (
     EditingStrength,

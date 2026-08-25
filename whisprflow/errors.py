@@ -6,6 +6,10 @@ class CredentialsError(WisprFlowError):
     """The desktop session is missing, malformed, or cannot be refreshed."""
 
 
+class DesktopPreferencesError(WisprFlowError):
+    """Desktop transcription preferences are missing or malformed."""
+
+
 class RuntimeConfigurationError(WisprFlowError):
     """The selected backend route is incomplete."""
 

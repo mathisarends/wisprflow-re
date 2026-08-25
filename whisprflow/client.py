@@ -11,7 +11,9 @@ from whisprflow.auth import (
     PublishableKeyResolver,
     SupabaseTokenRefresher,
 )
+from whisprflow.desktop_preferences import DesktopPreferencesStore
 from whisprflow.models import (
+    AppType,
     AuthStatus,
     RuntimeRoute,
     TranscriptionContext,
@@ -33,6 +35,7 @@ class WisprClient:
         auth: Callable[[], str],
         user_id: str | Callable[[], str],
         route: RuntimeRoute | Callable[[], RuntimeRoute] | None = None,
+        options_provider: Callable[[AppType], TranscriptionOptions] | None = None,
         transport: Transport | None = None,
         timeout: float = 90.0,
     ) -> None:
@@ -48,6 +51,7 @@ class WisprClient:
             self._route_provider = lambda: resolved_route
         else:
             self._route_provider = resolved_route
+        self._options_provider = options_provider
         self._transport = transport or GrpcTransport()
         self._timeout = timeout
 
@@ -60,6 +64,9 @@ class WisprClient:
         publishable_key_resolver: PublishableKeyResolver | None = None,
         config_path: Path | None = None,
         auto_discover: bool = True,
+        use_desktop_preferences: bool = False,
+        preferences_config_path: Path | None = None,
+        preferences_database_path: Path | None = None,
         route: RuntimeRoute | None = None,
         transport: Transport | None = None,
         timeout: float = 90.0,
@@ -69,7 +76,9 @@ class WisprClient:
         The edge proxy is the patch-free default. Supabase refresh configuration
         is resolved lazily from an explicit key, SDK config, environment, or the
         installed desktop application. Pass ``auto_discover=False`` to disable
-        inspection of the desktop bundle.
+        inspection of the desktop bundle. Pass ``use_desktop_preferences=True``
+        to reload preferences from the official desktop files for requests that
+        do not supply explicit options.
         """
         store = DesktopSessionStore(session_path)
         if publishable_key_resolver is not None and (
@@ -89,10 +98,18 @@ class WisprClient:
             key_resolver=resolver,
         )
         auth = DesktopAuth(store, refresher)
+        options_provider = None
+        if use_desktop_preferences:
+            preferences = DesktopPreferencesStore(
+                config_path=preferences_config_path,
+                database_path=preferences_database_path,
+            )
+            options_provider = preferences.load
         return cls(
             auth=auth,
             user_id=lambda: auth.user_id,
             route=route or RuntimeRoute(),
+            options_provider=options_provider,
             transport=transport,
             timeout=timeout,
         )
@@ -167,7 +184,13 @@ class WisprClient:
     ) -> TranscriptResult:
         if not audio:
             raise ValueError("'audio' must not be empty.")
-        options = options or TranscriptionOptions()
+        if options is None:
+            app_type = context.app_type if context is not None else AppType.OTHER
+            options = (
+                self._options_provider(app_type)
+                if self._options_provider is not None
+                else TranscriptionOptions()
+            )
         access_token = self._auth()
         user_id = self._user_id_provider()
         route = self._route_provider()

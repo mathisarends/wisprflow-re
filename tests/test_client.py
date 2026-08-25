@@ -1,7 +1,10 @@
+import json
 from contextlib import contextmanager
 from pathlib import Path
 
 from whisprflow import (
+    AppType,
+    EditingStrength,
     RuntimeRoute,
     TranscriptionContext,
     TranscriptionOptions,
@@ -47,6 +50,91 @@ def test_client_hides_auth_route_and_protocol_details():
     assert len(packets) == 3
     assert kwargs["route"] == route
     assert kwargs["access_token"] == "synthetic-token"
+
+
+def test_client_uses_options_provider_only_when_options_are_omitted():
+    response = _message(1, _message(1, _string(2, "Desktop output")))
+    transport = RecordingTransport([response, response])
+    seen_app_types = []
+
+    def options_provider(app_type):
+        seen_app_types.append(app_type)
+        return TranscriptionOptions(
+            app_type=app_type,
+            cleanup=EditingStrength.LIGHT,
+        )
+
+    client = WisprClient(
+        auth=lambda: "synthetic-token",
+        user_id="user-1",
+        options_provider=options_provider,
+        transport=transport,
+    )
+
+    client.transcribe(
+        b"RIFF first wav",
+        context=TranscriptionContext(app_type=AppType.EMAIL),
+    )
+    client.transcribe(
+        b"RIFF second wav",
+        options=TranscriptionOptions(cleanup=EditingStrength.HEAVY),
+    )
+
+    assert seen_app_types == [AppType.EMAIL]
+
+
+def test_from_desktop_can_enable_desktop_preferences(tmp_path, monkeypatch):
+    session_path = tmp_path / "session.json"
+    session_path.write_text(
+        json.dumps(
+            {
+                "sb-project-auth-token": json.dumps(
+                    {
+                        "access_token": "synthetic-access-token",
+                        "refresh_token": "synthetic-refresh-token",
+                        "expires_at": 9_999_999_999,
+                        "user": {"id": "user-1"},
+                    }
+                )
+            }
+        ),
+        encoding="utf-8",
+    )
+    preferences_config = tmp_path / "desktop-config.json"
+    preferences_database = tmp_path / "flow.sqlite"
+    seen = {}
+
+    class FakePreferencesStore:
+        def __init__(self, *, config_path, database_path):
+            seen["paths"] = (config_path, database_path)
+
+        def load(self, app_type):
+            seen["app_type"] = app_type
+            return TranscriptionOptions(replacements={"Desktop": "Loaded"})
+
+    monkeypatch.setattr(
+        "whisprflow.client.DesktopPreferencesStore", FakePreferencesStore
+    )
+    response = _message(1, _message(1, _string(2, "Desktop output")))
+    client = WisprClient.from_desktop(
+        session_path=session_path,
+        supabase_anon_key="synthetic-key",
+        use_desktop_preferences=True,
+        preferences_config_path=preferences_config,
+        preferences_database_path=preferences_database,
+        transport=RecordingTransport([response]),
+    )
+
+    result = client.transcribe(
+        b"RIFF synthetic wav",
+        context=TranscriptionContext(app_type=AppType.EMAIL),
+    )
+
+    assert result.final == "Loaded output"
+    assert seen == {
+        "paths": (preferences_config, preferences_database),
+        "app_type": AppType.EMAIL,
+    }
 
 
 def test_edge_route_does_not_require_private_backend_key():
@@ -112,7 +200,7 @@ def test_client_rejects_unsupported_audio_source():
     client = WisprClient(auth=lambda: "token", user_id="user-1")
 
     try:
-        client.transcribe(123)  # type: ignore[arg-type]
+        client.transcribe(123)  # ty: ignore[no-matching-overload]
     except TypeError as exc:
         assert str(exc) == "Unsupported audio source: <class 'int'>"
     else:
