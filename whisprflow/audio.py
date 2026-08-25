@@ -1,7 +1,7 @@
 import shutil
 import subprocess
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from whisprflow.errors import AudioConversionError
 
 
 @contextmanager
-def normalized_audio(path: str | Path) -> Iterator[bytes]:
+def normalized_audio(path: str | Path) -> Generator[bytes, None, None]:
     source = Path(path)
     if not source.is_file():
         raise AudioConversionError(f"Audio file does not exist: {source}")
