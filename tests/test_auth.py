@@ -59,6 +59,33 @@ def test_desktop_auth_refreshes_and_preserves_unknown_fields(tmp_path):
     assert outer["outer"] == "keep"
 
 
+def test_session_store_preserves_unencoded_auth_entry(tmp_path):
+    path = tmp_path / "session.json"
+    auth = {
+        "access_token": _jwt(sub="user-1", exp=900),
+        "refresh_token": "refresh-1",
+        "user": {"id": "user-1"},
+        "future_field": "keep",
+    }
+    path.write_text(
+        json.dumps({"sb-another-project-auth-token": auth}), encoding="utf-8"
+    )
+    store = DesktopSessionStore(path)
+
+    assert store.project_ref == "another-project"
+    store.save_refresh(
+        {
+            "access_token": _jwt(sub="user-1", exp=3000),
+            "expires_at": 3000,
+        }
+    )
+
+    stored = json.loads(path.read_text(encoding="utf-8"))
+    stored_auth = stored["sb-another-project-auth-token"]
+    assert isinstance(stored_auth, dict)
+    assert stored_auth["future_field"] == "keep"
+
+
 def test_expired_token_without_refresher_has_actionable_error(tmp_path):
     path = tmp_path / "session.json"
     _write_session(path, access=_jwt(sub="user-1", exp=900), expires_at=900)
