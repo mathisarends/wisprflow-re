@@ -17,7 +17,7 @@ class TokenRefresher(Protocol):
     def __call__(self, refresh_token: str, /) -> dict[str, Any]: ...
 
 
-def default_session_path() -> Path:
+def _default_session_path() -> Path:
     appdata = os.environ.get("APPDATA")
     if appdata:
         return Path(appdata) / "Wispr Flow" / "session.json"
@@ -28,7 +28,7 @@ class DesktopSessionStore:
     """Read and update the session owned by the official desktop client."""
 
     def __init__(self, path: Path | None = None) -> None:
-        self.path = path or default_session_path()
+        self.path = path or _default_session_path()
 
     def load(self) -> Credentials:
         outer, storage_key, auth = self._read()
