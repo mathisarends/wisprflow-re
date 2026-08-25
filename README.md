@@ -1,39 +1,33 @@
 # wisprflow-re
 
-An unofficial, patch-free Python client for Wispr Flow's desktop transcription
-protocol. It provides a small public API while keeping desktop-session reuse,
-token refresh, routing metadata, protobuf encoding, gRPC streaming, and audio
-normalization behind adapters.
+An unofficial Python client for transcribing audio with an existing Wispr Flow
+desktop session. It works without modifying the desktop app and exposes a small,
+typed API for files, WAV data, and microphone input.
 
-This project is not affiliated with or endorsed by Wispr Flow. It uses the
-caller's own authenticated desktop session and does not bypass subscriptions,
-quotas, or feature entitlements.
-
-## v1 scope
-
-- Reuse the official desktop `session.json`
-- Refresh an expired Supabase session automatically
-- Preserve unknown session fields and rotated refresh tokens
-- Use `inference.wisprflow.com` as a patch-free edge-proxy route
-- Support an explicit direct-backend route without embedding private keys
-- Encode the observed protobuf stream without generated stubs
-- Normalize audio through FFmpeg
-- Inject cursor, application, and dynamic-vocabulary context
-
-No JavaScript is injected and `app.asar` is never modified. The SDK may scan it
-read-only for the public Supabase key when no configured key is available.
+> [!IMPORTANT]
+> This project is not affiliated with or endorsed by Wispr Flow. It uses your own
+> authenticated desktop session and does not bypass subscriptions, quotas, or
+> feature entitlements.
 
 ## Requirements
 
 - Python 3.12–3.14
 - [uv](https://docs.astral.sh/uv/)
-- An existing Wispr Flow desktop install (for its `session.json`)
-- [FFmpeg](https://ffmpeg.org/) on `PATH` for file-based transcription
+- A signed-in Wispr Flow desktop installation
+- [FFmpeg](https://ffmpeg.org/) on `PATH` when transcribing audio files
 
-## Install
+## Installation
 
-```text
+Clone the repository and install its dependencies:
+
+```console
 uv sync
+```
+
+For microphone support, install the optional dependency as well:
+
+```console
+uv sync --extra microphone
 ```
 
 ## Quick start
@@ -43,37 +37,50 @@ from whisprflow import WisprClient
 
 client = WisprClient.from_desktop()
 result = client.transcribe("recording.mp3")
+
 print(result.final)
 ```
 
-An executable smoke-test example is included:
+`from_desktop()` finds the desktop session in its standard location. Audio files
+are converted to the required format through FFmpeg before transcription.
 
-```text
+You can also run the included command-line example:
+
+```console
 uv run python -m examples.try_desktop recording.wav
 ```
 
-Refresh works automatically with a supported desktop installation. Add
-`--refresh` only to override discovery by entering the Supabase publishable key
-through a hidden prompt. Use `--direct --model-id <MODEL_ID>` only when testing
-an explicit Baseten fallback route.
+Run it with `--help` to see options for language, writing style, context, token
+refresh overrides, and direct routing.
 
-## Speak directly into a microphone
+## Audio inputs
 
-Microphone capture is an optional PortAudio-based adapter. The core SDK remains
-installable without it:
+`transcribe()` accepts a file path, normalized WAV bytes, or an `AudioInput`
+adapter:
 
-```text
-uv sync --extra microphone
-uv run --extra microphone python -m examples.try_microphone --list-devices
-uv run --extra microphone python -m examples.try_microphone
+```python
+from pathlib import Path
+
+client.transcribe("recording.mp3")
+client.transcribe(Path("recording.wav"))
+client.transcribe(wav_bytes)
 ```
 
-The final command starts recording immediately. Speak, then press Enter to stop
-and transcribe. Select a port or use a fixed recording duration when needed:
+Byte payloads and custom input adapters must provide 16 kHz mono PCM16 WAV
+audio.
 
-```text
-uv run --extra microphone python -m examples.try_microphone --device 2
-uv run --extra microphone python -m examples.try_microphone --duration 10
+### Microphone
+
+List available recording devices:
+
+```console
+uv run --extra microphone python -m examples.try_microphone --list-devices
+```
+
+Start recording, speak, and press Enter to stop and transcribe:
+
+```console
+uv run --extra microphone python -m examples.try_microphone
 ```
 
 Programmatic usage:
@@ -82,103 +89,16 @@ Programmatic usage:
 from whisprflow import SoundDeviceMicrophone, WisprClient
 
 client = WisprClient.from_desktop()
-microphone = SoundDeviceMicrophone(device=None)
-result = client.transcribe(microphone)
+result = client.transcribe(SoundDeviceMicrophone())
 print(result.final)
 ```
 
-The default also refreshes expired access tokens. Publishable-key resolution is
-lazy and uses this priority: an explicit argument, the SDK config file,
-`WISPRFLOW_SUPABASE_ANON_KEY`, then read-only discovery from the installed
-desktop bundle.
+Pass `device=<index or name>` to select a specific input device.
 
-The optional config file is `%APPDATA%/wisprflow-re/config.json` on Windows,
-`~/Library/Application Support/wisprflow-re/config.json` on macOS, and
-`$XDG_CONFIG_HOME/wisprflow-re/config.json` (or `~/.config/...`) on Linux:
+## Transcription options and context
 
-```json
-{
-  "supabase_anon_keys": {
-    "<SUPABASE_PROJECT_REF>": "<SUPABASE_PUBLISHABLE_KEY>"
-  }
-}
-```
-
-An explicit key remains available as the highest-priority override:
-
-```python
-client = WisprClient.from_desktop(
-    supabase_anon_key="<SUPABASE_PUBLISHABLE_KEY>",
-)
-```
-
-To prohibit desktop-bundle inspection, use
-`WisprClient.from_desktop(auto_discover=False)`. Custom integrations can inject
-a `PublishableKeyResolver` implementation.
-
-Direct Baseten routing is an explicit fallback:
-
-```python
-from whisprflow import RuntimeRoute, WisprClient
-
-route = RuntimeRoute(
-    host="model-<MODEL_ID>.grpc.api.baseten.co",
-    model_id="<MODEL_ID>",
-    environment="production",
-    backend_key="<BASETEN_API_KEY>",
-)
-client = WisprClient.from_desktop(route=route)
-```
-
-For tests and other credential sources, inject adapters directly:
-
-```python
-client = WisprClient(
-    auth=my_token_provider,
-    user_id=my_user_id_provider,
-    route=my_route,
-    transport=my_transport,
-)
-```
-
-## Options and context
-
-To reuse the official desktop preferences and its local dictionary, opt in when
-constructing the desktop client:
-
-```python
-from whisprflow import AppType, TranscriptionContext, WisprClient
-
-client = WisprClient.from_desktop(use_desktop_preferences=True)
-result = client.transcribe(
-    "recording.wav",
-    context=TranscriptionContext(app_type=AppType.EMAIL),
-)
-```
-
-The SDK reads `%APPDATA%/Wispr Flow/config.json` and
-`%APPDATA%/Wispr Flow/flow.sqlite` without modifying either file. Preferences
-are reloaded for every transcription, so desktop changes take effect without
-recreating the client. The context's `app_type` selects the matching desktop
-style profile. Passing an explicit `TranscriptionOptions` instance bypasses
-desktop preference loading for that call. The opt-in also copies the desktop
-profile's first name, last name, and email into the transcription preference
-payload, matching the fields already supported by `TranscriptionOptions`.
-
-Custom locations can be supplied with `preferences_config_path` and
-`preferences_database_path`. The reader can also be used independently:
-
-```python
-from dataclasses import replace
-
-from whisprflow import DesktopPreferencesStore, EditingStrength
-
-store = DesktopPreferencesStore()
-options = replace(store.load(), cleanup=EditingStrength.VERBATIM)
-result = client.transcribe("recording.wav", options=options)
-```
-
-Manual options remain available:
+Use `TranscriptionOptions` to control language and formatting. Context helps the
+service adapt a transcript to the text and application around the cursor.
 
 ```python
 from whisprflow import (
@@ -186,9 +106,11 @@ from whisprflow import (
     Language,
     TranscriptionContext,
     TranscriptionOptions,
+    WisprClient,
     WritingStyle,
 )
 
+client = WisprClient.from_desktop()
 result = client.transcribe(
     "recording.wav",
     options=TranscriptionOptions(
@@ -204,39 +126,84 @@ result = client.transcribe(
 )
 ```
 
-The same method accepts file paths, normalized WAV bytes, and `AudioInput`
-adapters. These accepted inputs are also exported as the `AudioSource` type
-alias:
+To reuse preferences and dictionary entries from the desktop app, opt in when
+creating the client:
 
 ```python
-from pathlib import Path
-
-from whisprflow import SoundDeviceMicrophone
-
-client.transcribe("recording.mp3")
-client.transcribe(Path("recording.wav"))
-client.transcribe(wav_bytes)
-client.transcribe(SoundDeviceMicrophone())
+client = WisprClient.from_desktop(use_desktop_preferences=True)
 ```
 
-FFmpeg must be available on `PATH` for file transcription. Byte payloads and
-input adapters must produce normalized 16 kHz mono PCM16 WAV audio.
+These files are read without being modified. Preferences are reloaded for each
+transcription, and explicitly supplied `TranscriptionOptions` take precedence.
+
+## Authentication
+
+The client uses the current Wispr Flow desktop login and refreshes an expired
+access token when possible. In the normal case, no authentication configuration
+is required.
+
+If automatic discovery is unavailable, provide the public Supabase key through
+one of these sources, in priority order:
+
+1. The `supabase_anon_key` argument to `WisprClient.from_desktop()`
+2. `supabase_anon_keys["<project ref>"]` in the SDK config file
+3. The `WISPRFLOW_SUPABASE_ANON_KEY` environment variable
+4. Read-only discovery from the installed desktop bundle
+
+The SDK config file is located at:
+
+- Windows: `%APPDATA%/wisprflow-re/config.json`
+- macOS: `~/Library/Application Support/wisprflow-re/config.json`
+- Linux: `$XDG_CONFIG_HOME/wisprflow-re/config.json` or
+  `~/.config/wisprflow-re/config.json`
+
+Example:
+
+```json
+{
+  "supabase_anon_keys": {
+    "<SUPABASE_PROJECT_REF>": "<SUPABASE_PUBLISHABLE_KEY>"
+  }
+}
+```
+
+Set `auto_discover=False` to prevent inspection of the installed desktop bundle.
+A custom session path can be passed as `session_path=Path(...)`.
+
+## Advanced routing
+
+The default route requires no private backend credentials. A direct backend can
+be configured explicitly when needed:
+
+```python
+from whisprflow import RuntimeRoute, WisprClient
+
+route = RuntimeRoute(
+    host="model-<MODEL_ID>.grpc.api.baseten.co",
+    model_id="<MODEL_ID>",
+    environment="production",
+    backend_key="<BASETEN_API_KEY>",
+)
+client = WisprClient.from_desktop(route=route)
+```
+
+Keep backend keys outside source control. The client does not ship with or infer
+private backend credentials.
 
 ## Development
 
-```text
+```console
 uv run pytest
 uv run ruff check .
-uv run ruff format .
+uv run ruff format --check .
 ```
 
-## Stability
+## Project status
 
-The protocol is reverse engineered and can change when Wispr updates its
-desktop client. In particular, the edge proxy, protobuf fields, client version,
-and authentication flow are compatibility boundaries. The adapter structure is
-intended to isolate those changes from application code.
+This client relies on a reverse-engineered desktop protocol, so compatibility can
+break when Wispr Flow changes its application or service. The public client API
+is intentionally small to keep those changes isolated.
 
-Protocol behavior was derived from the MIT-licensed
+Protocol behavior was informed by the MIT-licensed
 [`ThisisShashwat/wisprflow-sdk`](https://github.com/ThisisShashwat/wisprflow-sdk)
-and inspection of the installed client's non-secret routing logic.
+and inspection of the installed client's non-secret routing behavior.
