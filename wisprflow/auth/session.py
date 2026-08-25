@@ -6,8 +6,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from whisprflow.errors import CredentialsError
-from whisprflow.models import Credentials
+from wisprflow.errors import CredentialsError
+from wisprflow.models import Credentials
 
 
 def _default_session_path() -> Path:

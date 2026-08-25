@@ -3,10 +3,10 @@ import time
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from whisprflow.auth.refresh import SupabaseTokenRefresher
-from whisprflow.auth.session import DesktopSessionStore
-from whisprflow.errors import CredentialsError
-from whisprflow.models import AuthStatus, Credentials
+from wisprflow.auth.refresh import SupabaseTokenRefresher
+from wisprflow.auth.session import DesktopSessionStore
+from wisprflow.errors import CredentialsError
+from wisprflow.models import AuthStatus, Credentials
 
 
 class TokenRefresher(Protocol):

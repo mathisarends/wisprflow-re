@@ -5,7 +5,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-from whisprflow.errors import AudioConversionError
+from wisprflow.errors import AudioConversionError
 
 
 @contextmanager

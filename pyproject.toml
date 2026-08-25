@@ -18,7 +18,7 @@ microphone = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["whisprflow"]
+packages = ["wisprflow"]
 
 [tool.ruff]
 line-length = 88
@@ -28,8 +28,15 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=whisprflow --cov-report=term-missing"
+addopts = "--cov --cov-report=term-missing --cov-fail-under=90"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["wisprflow"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
 
 [dependency-groups]
 dev = [

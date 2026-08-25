@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from whisprflow.errors import AudioInputError, OptionalDependencyError
+from wisprflow.errors import AudioInputError, OptionalDependencyError
 
 
 @runtime_checkable

@@ -15,7 +15,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from whisprflow import (
+from wisprflow import (
     CredentialsError,
     EditingStrength,
     Language,

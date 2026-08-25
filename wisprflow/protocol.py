@@ -2,8 +2,8 @@ import re
 import uuid
 from collections.abc import Iterable, Iterator
 
-from whisprflow.errors import ProtocolError
-from whisprflow.models import (
+from wisprflow.errors import ProtocolError
+from wisprflow.models import (
     AppType,
     Language,
     TranscriptionContext,

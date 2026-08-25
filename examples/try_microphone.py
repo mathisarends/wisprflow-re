@@ -10,7 +10,7 @@ import argparse
 import getpass
 import sys
 
-from whisprflow import (
+from wisprflow import (
     EditingStrength,
     Language,
     SoundDeviceMicrophone,

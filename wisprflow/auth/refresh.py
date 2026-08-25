@@ -4,8 +4,8 @@ import urllib.request
 from collections.abc import Callable
 from typing import Any
 
-from whisprflow.auth.keys import PublishableKeyResolver
-from whisprflow.errors import CredentialsError
+from wisprflow.auth.keys import PublishableKeyResolver
+from wisprflow.errors import CredentialsError
 
 
 class SupabaseTokenRefresher:

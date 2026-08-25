@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from typing import Protocol
 
-from whisprflow.models import RuntimeRoute
+from wisprflow.models import RuntimeRoute
 
 
 class Transport(Protocol):
